@@ -8,15 +8,19 @@ public class Player : MonoBehaviour
 {
 #region Inputs    
     [SerializeField] private Rigidbody2D rb;
-    [SerializeField] public Animator player;
-    [SerializeField] Vector2 lastPosition;
+    [SerializeField] private Animator player;
+    [SerializeField] private Vector2 lastPosition;
     [SerializeField] public Text Texts;
     [SerializeField] private float speed = 4;
     [SerializeField] private float jumpForce = 5f;
-    [SerializeField] bool player1;   
+    [SerializeField] private bool player1;  
+    private Vector2 FBall; 
+    private GameObject ball;
     private bool onGround=true;
+    private bool RegisteredGoal=false;
     private int player1C=0;
     private int player2C=0;
+    
 #endregion
 
 #region PlayerCollision
@@ -39,12 +43,24 @@ public class Player : MonoBehaviour
             player1=true;
             else
             player1=false; 
-        Texts.text = player1C.ToString()+" : "+player2C.ToString();    
     }
 #endregion
+private void Reset() 
+{
+    Vector2 reset, reset2;
+    reset=new Vector2(-7.8f,0.6f);
+    reset2=new Vector2(7.8f,0.6f);
+    if (rb.name=="Ghost1") rb.position= reset;
+    if (rb.name=="Ghost2") rb.position= reset2;
+    ball=GameObject.Find("Ball");
+    ball.GetComponent<Rigidbody2D>().velocity=Vector2.zero;
+    ball.GetComponent<Rigidbody2D>().angularVelocity = 0; 
+    ball.transform.position=new Vector2(0,-0.2f);    
+}
 
-private void FixedUpdate() {
-#region global
+    private void FixedUpdate() 
+    {
+    #region global
             
         if (Input.GetAxisRaw("Vertical")==0)
         {   
@@ -53,10 +69,36 @@ private void FixedUpdate() {
         }
 
 #endregion
-}
+
+    #region GoalChecking
+          if (FBall.x<(-9.2f) || FBall.x>9.2f)
+        {
+            RegisteredGoal=false;
+            if (!RegisteredGoal)
+            {
+                if (FBall.x<(-9.2f) && FBall.y<1.21f) player2C=player2C+1;
+                if (FBall.x>9.2f && FBall.y<1.21f ) player1C=player1C+1;
+                Reset();
+                RegisteredGoal=true;
+                Debug.Log("Player1: " + player1C + " || Player2: " + player2C);
+            }
+        }
+#endregion
+
+    }
     private void Update()
     {
-#region Player1Input
+
+    #region ScoreUpdating
+         Texts.text = player1C.ToString()+" : "+player2C.ToString();    
+#endregion
+
+    #region Ball_Position        
+         FBall=(Vector2)GameObject.Find("Ball").transform.position;
+         Debug.Log(FBall);
+#endregion
+
+    #region Player1Input
         if (player1)
         {
             if (Input.GetKey(KeyCode.S)) player.SetBool("SpacePressed",true);
@@ -79,7 +121,7 @@ private void FixedUpdate() {
         }   
 #endregion
 
-#region Player2Input
+    #region Player2Input
     if (!player1)
     {
         if (Input.GetKey(KeyCode.DownArrow)) player.SetBool("spacePressed2",true);
@@ -99,7 +141,8 @@ private void FixedUpdate() {
             rb.velocity=transform.right*speed;
             transform.localScale=new Vector2(0.4f,0.4f);
         }
-        }
-#endregion
+        
+    }
+#endregion    
     }
 }
