@@ -12,19 +12,25 @@ public class Player : MonoBehaviour
     [SerializeField] private Animator player;
     [SerializeField] private Vector2 lastPosition;
     [SerializeField] public Text Texts;
+    [SerializeField] public Text Timer;
+    [SerializeField] public Text Result;
     [SerializeField] private float speed = 4;
     [SerializeField] private float jumpForce = 5f;
-    [SerializeField] private bool player1;  
+    [SerializeField] private bool player1; 
     private Vector2 FBall; 
+    private GameObject panel;
     private GameObject ball;
     private bool onGround=true;
     private bool RegisteredGoal=false;
     private bool modifyRange=false;
+    private bool GameOver=false;
     public static bool NormalMode=false;
     private int player1C=0;
     private int player2C=0;
     private int Rescale;
     private int modCharacter;
+    private float currentTime;
+    private float startingTime=60f;
     
 #endregion
 
@@ -63,7 +69,11 @@ private void Reset()
     reset=new Vector2(-7.8f,0.6f);
     reset2=new Vector2(7.8f,0.6f);
     if (rb.name=="Ghost1") rb.position= reset;
-    if (rb.name=="Ghost2") rb.position= reset2;
+    if (rb.name=="Ghost2") 
+    {
+        rb.position= reset2;
+        rb.transform.localScale=new Vector2(-0.4f,0.4f);
+    }
     ball=GameObject.Find("Ball");
     ball.GetComponent<Rigidbody2D>().velocity=Vector2.zero;
     ball.GetComponent<Rigidbody2D>().angularVelocity = 0; 
@@ -74,6 +84,7 @@ private void Reset()
     #region Init  
     void Start()
     {
+        panel=GameObject.Find("Canvas/LevelPanel");
         if(!NormalMode)
         {
             Random rd=new Random();
@@ -86,11 +97,13 @@ private void Reset()
             player1=true;
             else
             player1=false; 
-        //UpdateScore();
+        UpdateScore();
+        currentTime=startingTime;
     }
 #endregion
     private void FixedUpdate() 
     {
+        if (!GameOver) panel.SetActive(false);
     #region global
             
         if (Input.GetAxisRaw("Vertical")==0)
@@ -100,12 +113,39 @@ private void Reset()
         }
 #endregion
 
-    }
+    #region TimeCounter
+        currentTime -= 1 * Time.fixedDeltaTime; 
+        Timer.text=((int)currentTime+ " seconds");
+        if (currentTime<1 && (player1C==player2C)) Timer.text=("golden goal");
+        if(currentTime<1 && player1C>player2C && !GameOver) 
+        {
+            Result.text=("Winner: Ghost1");
+            currentTime=10;
+            GameOver=true;
+            panel.SetActive(true);
+        }
+        else if (currentTime<1 && player1C<player2C && !GameOver) 
+        {
+            Result.text=("Winner Ghost2");
+            currentTime=10;
+            GameOver=true;
+            panel.SetActive(true);
+        }
+        if (GameOver==true && currentTime<1)
+        {
+            Result.text="";
+            Reset();
+            player1C=0;
+            player2C=0;
+            UpdateScore();
+            GameOver=false;
+            currentTime=60;
+        }
+        #endregion
 
-    private void Update()
-    {
-          #region GoalChecking
-          if (FBall.x<(-9.2f) || FBall.x>9.2f)
+        
+    #region GoalChecking
+        if (FBall.x<(-9.2f) || FBall.x>9.2f)
         {
             RegisteredGoal=false;
             if (!RegisteredGoal)
@@ -119,6 +159,11 @@ private void Reset()
             }
         }
 #endregion
+
+    }
+
+    private void Update()
+    {
 
     #region Ball_Position        
          FBall=(Vector2)GameObject.Find("Ball").transform.position;
@@ -165,7 +210,7 @@ private void Reset()
         {
             rb.velocity=transform.right*-1*speed;
             //playerScale
-            if (modifyRange && modCharacter==2) transform.localScale=new Vector2(-0.4f,0.1f);
+            if (modifyRange && modCharacter==2) transform.localScale=new Vector2(-0.1f,0.1f);
             else transform.localScale=new Vector2(-0.4f,0.4f);
             //
         }
